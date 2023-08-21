@@ -1,0 +1,24 @@
+[Network]
+Address = ':19132'
+
+[Server]
+Name = ''
+ShutdownMessage = '<b><red>Build Server Closed.</red></b>'
+AuthEnabled = true
+JoinMessage = '<green>[+] %v</green>'
+QuitMessage = '<red>[-] %v</red>'
+
+[World]
+SaveData = false
+Folder = 'assets/world'
+
+[Players]
+MaxCount = 0
+MaximumChunkRadius = 16
+SaveData = false
+Folder = 'assets/players'
+
+[Resources]
+AutoBuildPack = false
+Folder = 'assets/resources'
+Required = false
