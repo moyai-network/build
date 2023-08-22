@@ -91,6 +91,14 @@ func (m *manager) CreateWorld(name string) (*world.World, error) {
 		Entities: entity.DefaultRegistry,
 	}.New()
 
+	w.StopWeatherCycle()
+	w.SetDefaultGameMode(world.GameModeCreative)
+	w.SetTime(6000)
+	w.StopTime()
+	w.SetTickRange(0)
+	w.StopThundering()
+	w.StopRaining()
+
 	m.worldsMu.Lock()
 	m.worlds[name] = w
 	m.worldsMu.Unlock()

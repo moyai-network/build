@@ -24,4 +24,4 @@ Folder = 'assets/resources'
 Required = false
 
 [Moyai]
-Whitelist = ['RestartFU']
+Whitelist = ['RestartFU', 'OneRoberto242']

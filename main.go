@@ -39,7 +39,7 @@ func main() {
 
 	w := srv.World()
 	w.StopWeatherCycle()
-	w.SetDefaultGameMode(world.GameModeAdventure)
+	w.SetDefaultGameMode(world.GameModeCreative)
 	w.SetTime(6000)
 	w.StopTime()
 	w.SetTickRange(0)
@@ -80,6 +80,10 @@ func registerCommands() {
 		cmd.New("world", "Manage worlds.", []string{"w"}, command.WorldCreate{}, command.WorldDelete{}, command.WorldTeleport{}),
 		cmd.New("wand", "Get the magic wand", nil, command.Wand{}),
 		cmd.New("set", "Set blocks within your area selection.", nil, command.Set{}),
+		cmd.New("undo", "Undo your set / redo usage.", nil, command.Undo{}),
+		cmd.New("redo", "Redo your undo usage.", nil, command.Redo{}),
+		cmd.New("copy", "Copy a structure.", nil, command.Copy{}, command.CopySave{}, command.CopyDelete{}),
+		cmd.New("paste", "Paste your copied structure.", nil, command.Paste{}, command.PasteExisting{}),
 	} {
 		cmd.Register(c)
 	}

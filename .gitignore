@@ -1,3 +1,5 @@
 assets/worlds/*
 assets/resources
 .idea/
+assets/tmp
+assets/structures/*

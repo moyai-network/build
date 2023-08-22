@@ -1,7 +1,6 @@
 package command
 
 import (
-	"github.com/df-mc/dragonfly/server/block/cube"
 	"github.com/df-mc/dragonfly/server/cmd"
 	"github.com/df-mc/dragonfly/server/player"
 	"github.com/df-mc/dragonfly/server/world"
@@ -23,20 +22,13 @@ func (se Set) Run(s cmd.Source, o *cmd.Output) {
 	if !ok {
 		return
 	}
-	a, ok := h.Area()
-	if !ok {
-		o.Error("You need to have selected the two area boundaries in order to use this.")
-		return
-	}
 
 	bl, ok := world.BlockByName("minecraft:"+string(se.Block), nil)
 	if !ok {
 		o.Errorf("No block with the name %s was found.", se.Block)
 		return
 	}
-	a.Range(func(x, y, z int) {
-		p.World().SetBlock(cube.Pos{x, y, z}, bl, nil)
-	})
+	h.Set(bl)
 }
 
 // Allow ...
