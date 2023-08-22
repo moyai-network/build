@@ -3,3 +3,5 @@ assets/resources
 .idea/
 assets/tmp
 assets/structures/*
+
+build

@@ -163,22 +163,9 @@ func (h *Handler) Paste() {
 		h.p.Message(text.Colourf("<red>You must use copy first, in order to use this.</red>"))
 		return
 	}
-	w := h.p.World()
-
-	dim := h.copy.Dimensions()
 	h.undo = map[world.Block][]cube.Pos{}
 
-	for x := 0; x < dim[0]; x++ {
-		for y := 0; y < dim[1]; y++ {
-			for z := 0; z < dim[2]; z++ {
-				pos := cube.Pos{x, y, z}
-				b := w.Block(pos)
-				h.undo[b] = append(h.undo[b], pos)
-			}
-		}
-	}
-
-	w.BuildStructure(cube.PosFromVec3(h.p.Position()), h.copy)
+	h.undo = buildStructure(h.p.World(), cube.PosFromVec3(h.p.Position()), h.copy)
 	h.p.Message(text.Colourf("<green>Successfully pasted your copied structure.</green>"))
 }
 
