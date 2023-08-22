@@ -13,6 +13,8 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/text"
 	"github.com/sirupsen/logrus"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -31,6 +33,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	c.Name = text.Colourf("<b><red>Build</red></b>")
+	c.Allower = moyai.NewAllower(config.Moyai.Whitelist)
 
 	srv := c.New()
 
@@ -49,7 +52,16 @@ func main() {
 	}
 	registerCommands()
 
-	srv.CloseOnProgramEnd()
+	ch := make(chan os.Signal, 2)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-ch
+		worlds.Manager().Close()
+		if err := srv.Close(); err != nil {
+			log.Errorf("close server: %v", err)
+		}
+	}()
+
 	srv.Listen()
 	for srv.Accept(accept) {
 		// Do nothing
@@ -66,6 +78,8 @@ func accept(p *player.Player) {
 func registerCommands() {
 	for _, c := range []cmd.Command{
 		cmd.New("world", "Manage worlds.", []string{"w"}, command.WorldCreate{}, command.WorldDelete{}, command.WorldTeleport{}),
+		cmd.New("wand", "Get the magic wand", nil, command.Wand{}),
+		cmd.New("set", "Set blocks within your area selection.", nil, command.Set{}),
 	} {
 		cmd.Register(c)
 	}

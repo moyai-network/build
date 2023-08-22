@@ -22,3 +22,6 @@ Folder = 'assets/players'
 AutoBuildPack = false
 Folder = 'assets/resources'
 Required = false
+
+[Moyai]
+Whitelist = ['RestartFU']

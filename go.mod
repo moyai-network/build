@@ -12,6 +12,7 @@ require (
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/df-mc/atomic v1.10.0 // indirect
 	github.com/df-mc/goleveldb v1.1.9 // indirect
+	github.com/df-mc/we v0.0.0-20221120123556-6250647631b5 // indirect
 	github.com/df-mc/worldupgrader v1.0.8 // indirect
 	github.com/go-gl/mathgl v1.0.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect

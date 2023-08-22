@@ -122,3 +122,19 @@ func (m *manager) DeleteWorld(name string) error {
 	}
 	return nil
 }
+
+func (m *manager) Close() {
+	m.worldsMu.Lock()
+	defer m.worldsMu.Unlock()
+	for _, w := range m.worlds {
+		for _, e := range w.Entities() {
+			if p, ok := e.(*player.Player); ok {
+				m.w.AddEntity(p)
+				p.Teleport(m.w.Spawn().Vec3Middle())
+				continue
+			}
+			_ = e.Close()
+		}
+		_ = w.Close()
+	}
+}

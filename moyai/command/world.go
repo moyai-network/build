@@ -74,19 +74,19 @@ func (w WorldTeleport) Run(s cmd.Source, o *cmd.Output) {
 }
 
 // Allow ...
-func (w WorldCreate) Allow(s cmd.Source) bool {
+func (WorldCreate) Allow(s cmd.Source) bool {
 	_, ok := s.(*player.Player)
 	return ok
 }
 
 // Allow ...
-func (w WorldDelete) Allow(s cmd.Source) bool {
+func (WorldDelete) Allow(s cmd.Source) bool {
 	_, ok := s.(*player.Player)
 	return ok
 }
 
 // Allow ...
-func (w WorldTeleport) Allow(s cmd.Source) bool {
+func (WorldTeleport) Allow(s cmd.Source) bool {
 	_, ok := s.(*player.Player)
 	return ok
 }
