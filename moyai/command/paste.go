@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"github.com/df-mc/dragonfly/server/cmd"
 	"github.com/df-mc/dragonfly/server/player"
 	"github.com/moyai-network/build/moyai/user"
@@ -71,9 +70,7 @@ func (structureList) Options(cmd.Source) (st []string) {
 		if f.IsDir() {
 			continue
 		}
-		fmt.Println(f.Name())
 		st = append(st, f.Name())
 	}
-	fmt.Println(st)
 	return
 }
