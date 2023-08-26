@@ -84,6 +84,7 @@ func registerCommands() {
 		cmd.New("redo", "Redo your undo usage.", nil, command.Redo{}),
 		cmd.New("copy", "Copy a structure.", nil, command.Copy{}, command.CopySave{}, command.CopyDelete{}),
 		cmd.New("paste", "Paste your copied structure.", nil, command.Paste{}, command.PasteExisting{}),
+		cmd.New("pos", "Update a selection using your player position.", nil, command.Pos{}),
 	} {
 		cmd.Register(c)
 	}

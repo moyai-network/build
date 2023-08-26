@@ -59,6 +59,10 @@ func (h *Handler) HandleItemUseOnBlock(ctx *event.Context, pos cube.Pos, _ cube.
 		h.selection[1] = pos
 		h.mu.Unlock()
 
+		if a, ok := h.Area(); ok {
+			h.p.Message(text.Colourf("<green>Selected Blocks: %d</green>", a.Dx()*a.Dy()*a.Dz()))
+		}
+
 		h.p.Message(text.Colourf("<green>Area position 2 set to <yellow>%v, %v, %v</yellow>", pos.X(), pos.Y(), pos.Z()))
 	}
 }
@@ -78,6 +82,10 @@ func (h *Handler) HandleBlockBreak(ctx *event.Context, pos cube.Pos, _ *[]item.S
 		h.selection[0] = pos
 		h.mu.Unlock()
 
+		if a, ok := h.Area(); ok {
+			h.p.Message(text.Colourf("<green>Selected Blocks: %d</green>", a.Dx()*a.Dy()*a.Dz()))
+		}
+
 		h.p.Message(text.Colourf("<green>Area position 1 set to <yellow>%v, %v, %v</yellow>", pos.X(), pos.Y(), pos.Z()))
 	}
 }
@@ -86,6 +94,14 @@ func (h *Handler) HandleBlockPlace(ctx *event.Context, _ cube.Pos, _ world.Block
 		ctx.Cancel()
 		h.p.Message(text.Colourf("<red>You may not place, break or interact with blocks in the default world.</red>"))
 		return
+	}
+}
+
+func (h *Handler) SetPos(n int, pos cube.Pos) {
+	h.selection[n] = pos
+
+	if a, ok := h.Area(); ok {
+		h.p.Message(text.Colourf("<green>Selected Blocks: %d</green>", a.Dx()*a.Dy()*a.Dz()))
 	}
 }
 
