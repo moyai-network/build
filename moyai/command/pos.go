@@ -16,13 +16,13 @@ type Pos struct {
 
 func (po Pos) Run(s cmd.Source, o *cmd.Output) {
 	p := s.(*player.Player)
-	pos := p.Position()
+	pos := cube.PosFromVec3(p.Position())
 
 	h := p.Handler().(*user.Handler)
 	n, _ := strconv.Atoi(string(po.Pos))
-	h.SetPos(n, cube.PosFromVec3(pos))
+	h.SetPos(n-1, pos)
 
-	p.Message(text.Colourf("<green>Area position 1 set to <yellow>%v, %v, %v</yellow>", pos.X(), pos.Y(), pos.Z()))
+	p.Message(text.Colourf("<green>Area position %s set to <yellow>%v, %v, %v</yellow>", po.Pos, pos.X(), pos.Y(), pos.Z()))
 }
 
 // Allow ...
@@ -38,5 +38,5 @@ func (pos) Type() string {
 }
 
 func (pos) Options(_ cmd.Source) []string {
-	return []string{"0", "1"}
+	return []string{"1", "2"}
 }
