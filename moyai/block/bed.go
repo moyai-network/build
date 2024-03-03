@@ -18,7 +18,6 @@ func init() {
 	}
 
 	for _, col := range item.Colours() {
-		_ = col
 		world.RegisterItem(Bed{Colour: col})
 		creative.RegisterItem(item.NewStack(Bed{Colour: col}, 1))
 	}
