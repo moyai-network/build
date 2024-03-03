@@ -6,6 +6,7 @@ import (
 	"github.com/df-mc/dragonfly/server/player/chat"
 	"github.com/df-mc/dragonfly/server/world"
 	"github.com/moyai-network/build/moyai"
+	_ "github.com/moyai-network/build/moyai/block"
 	"github.com/moyai-network/build/moyai/command"
 	"github.com/moyai-network/build/moyai/user"
 	"github.com/moyai-network/build/moyai/worlds"
