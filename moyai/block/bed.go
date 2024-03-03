@@ -10,7 +10,6 @@ import (
 	"github.com/go-gl/mathgl/mgl64"
 	"github.com/moyai-network/build/moyai/block/model"
 	"github.com/restartfu/banana/nbtconv"
-	"golang.org/x/exp/rand"
 )
 
 func init() {
@@ -19,6 +18,7 @@ func init() {
 	}
 
 	for _, col := range item.Colours() {
+		_ = col
 		world.RegisterItem(Bed{Colour: col})
 		creative.RegisterItem(item.NewStack(Bed{Colour: col}, 1))
 	}
@@ -134,9 +134,9 @@ func (b Bed) EncodeItem() (name string, meta int16) {
 // EncodeBlock ...
 func (b Bed) EncodeBlock() (name string, properties map[string]interface{}) {
 	return "minecraft:bed", map[string]interface{}{
-		"direction":      int32(horizontalDirection(b.Facing)),
-		"occupied_bit":   boolByte(false),
-		"head_piece_bit": boolByte(b.HeadSide),
+		"facing_bit":   int32(horizontalDirection(b.Facing)),
+		"occupied_bit": boolByte(false),
+		"head_bit":     boolByte(b.HeadSide),
 	}
 }
 
@@ -181,8 +181,9 @@ func (b Bed) Side(pos cube.Pos, w *world.World) (Bed, cube.Pos, bool) {
 // allBeds returns all possible beds.
 func allBeds() (beds []world.Block) {
 	for _, d := range cube.Directions() {
-		beds = append(beds, Bed{h: uint64(rand.Intn(234245)), Facing: d})
-		beds = append(beds, Bed{h: uint64(rand.Intn(234245)), Facing: d, HeadSide: true})
+		bedH := block.NextHash()
+		beds = append(beds, Bed{h: bedH | uint64(d)<<8 | uint64(boolByte(false))<<10, Facing: d})
+		beds = append(beds, Bed{h: bedH | uint64(d)<<8 | uint64(boolByte(true))<<10, Facing: d, HeadSide: true})
 	}
 	return
 }
