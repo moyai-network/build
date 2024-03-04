@@ -43,3 +43,5 @@ require (
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/df-mc/dragonfly => github.com/Shock-Network/dragonfly v0.0.0-20240210070948-aad067c6c9bd

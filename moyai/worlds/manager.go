@@ -120,6 +120,7 @@ func (m *manager) DeleteWorld(name string) error {
 			}
 			_ = e.Close()
 		}
+		delete(m.worlds, name)
 		_ = w.Close()
 	}
 	m.worldsMu.Unlock()
