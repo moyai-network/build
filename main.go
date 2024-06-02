@@ -6,7 +6,6 @@ import (
 	"github.com/df-mc/dragonfly/server/player/chat"
 	"github.com/df-mc/dragonfly/server/world"
 	"github.com/moyai-network/build/moyai"
-	_ "github.com/moyai-network/build/moyai/block"
 	"github.com/moyai-network/build/moyai/command"
 	"github.com/moyai-network/build/moyai/user"
 	"github.com/moyai-network/build/moyai/worlds"
@@ -70,6 +69,7 @@ func main() {
 }
 
 func accept(p *player.Player) {
+	p.SetSpeed(5)
 	p.SetGameMode(world.GameModeCreative)
 	p.ShowCoordinates()
 	p.Handle(user.NewHandler(p))
@@ -78,9 +78,11 @@ func accept(p *player.Player) {
 // registerCommands registers all commands for the build server.
 func registerCommands() {
 	for _, c := range []cmd.Command{
+		cmd.New("tp", "teleportation commands", nil, command.TeleportToPos{}, command.TeleportToTarget{}),
 		cmd.New("world", "Manage worlds.", []string{"w"}, command.WorldCreate{}, command.WorldDelete{}, command.WorldTeleport{}),
 		cmd.New("wand", "Get the magic wand", nil, command.Wand{}),
 		cmd.New("set", "Set blocks within your area selection.", nil, command.Set{}),
+		cmd.New("replace", "Replace blocks within your area selection.", nil, command.Replace{}),
 		cmd.New("undo", "Undo your set / redo usage.", nil, command.Undo{}),
 		cmd.New("redo", "Redo your undo usage.", nil, command.Redo{}),
 		cmd.New("copy", "Copy a structure.", nil, command.Copy{}, command.CopySave{}, command.CopyDelete{}),

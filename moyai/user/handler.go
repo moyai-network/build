@@ -174,6 +174,34 @@ func (h *Handler) Set(b world.Block) {
 	h.p.Message(text.Colourf("<green>%d blocks were set.</green>", count))
 }
 
+func (h *Handler) Replace(old, new world.Block) {
+	a, ok := h.Area()
+	if !ok {
+		h.p.Message(text.Colourf("<red>You need to have selected the two area boundaries in order to use this.</red>"))
+		return
+	}
+	w := h.p.World()
+
+	var count int
+
+	h.mu.Lock()
+	h.undo = map[world.Block][]cube.Pos{}
+	a.Range(func(x, y, z int) {
+		count++
+
+		pos := cube.Pos{x, y, z}
+		bl := w.Block(pos)
+		h.undo[bl] = append(h.undo[bl], pos)
+
+		if bl == old {
+			w.SetBlock(cube.Pos{x, y, z}, new, nil)
+		}
+	})
+	h.mu.Unlock()
+
+	h.p.Message(text.Colourf("<green>%d blocks were replaced.</green>", count))
+}
+
 func (h *Handler) Paste() {
 	if h.copy == (structure.Structure{}) {
 		h.p.Message(text.Colourf("<red>You must use copy first, in order to use this.</red>"))
