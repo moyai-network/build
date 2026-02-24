@@ -28,8 +28,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Validate deployment files
         run: |
@@ -37,7 +35,7 @@ jobs:
           test -f Makefile
           test -f go.mod
           test -d cmd
-          test -d external/flyway
+          test -f .gitmodules
 
       - name: Configure SSH
         env:
@@ -106,6 +104,12 @@ jobs:
           DB_PORT="${DB_PORT:-5432}"
           DB_MAX_CONNS="${DB_MAX_CONNS:-10}"
 
+          FLYWAY_SHA="$(git rev-parse HEAD:external/flyway)"
+          FLYWAY_URL="$(git config -f .gitmodules --get submodule.external/flyway.url || true)"
+          if [ -z "${FLYWAY_URL:-}" ]; then
+            FLYWAY_URL="ssh://git@github.com/moyai-network/flyway.git"
+          fi
+
           decode_percent_encoding() {
             local in="$1"
             local out=""
@@ -141,6 +145,8 @@ jobs:
           DB_USER_Q="$(printf '%q' "$DB_USER")"
           DB_PASS_Q="$(printf '%q' "$DB_PASS")"
           DB_MAX_CONNS_Q="$(printf '%q' "$DB_MAX_CONNS")"
+          FLYWAY_SHA_Q="$(printf '%q' "$FLYWAY_SHA")"
+          FLYWAY_URL_Q="$(printf '%q' "$FLYWAY_URL")"
 
           sshpass -e ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -p 23 dubai@restartfu.com \
             bash -s -- "$REMOTE_DIR" <<REMOTE
@@ -154,9 +160,15 @@ jobs:
           DB_USER=$DB_USER_Q
           DB_PASS=$DB_PASS_Q
           DB_MAX_CONNS=$DB_MAX_CONNS_Q
+          FLYWAY_SHA=$FLYWAY_SHA_Q
+          FLYWAY_URL=$FLYWAY_URL_Q
 
           if ! command -v screen >/dev/null 2>&1; then
             echo "screen is required on remote host"
+            exit 1
+          fi
+          if ! command -v git >/dev/null 2>&1; then
+            echo "git is required on remote host"
             exit 1
           fi
           if ! command -v docker >/dev/null 2>&1; then
@@ -167,6 +179,18 @@ jobs:
           mkdir -p "\$APP_DIR/logs"
           find "\$APP_DIR" -mindepth 1 -maxdepth 1 ! -name data ! -name logs -exec rm -rf {} +
           tar -C "\$REMOTE_DIR" -cf - . | tar -C "\$APP_DIR" -xf -
+
+          install -m 700 -d "\$HOME/.ssh"
+          touch "\$HOME/.ssh/known_hosts"
+          chmod 600 "\$HOME/.ssh/known_hosts"
+          if ! ssh-keygen -F github.com -f "\$HOME/.ssh/known_hosts" >/dev/null; then
+            ssh-keyscan github.com >> "\$HOME/.ssh/known_hosts"
+          fi
+
+          mkdir -p "\$APP_DIR/external"
+          rm -rf "\$APP_DIR/external/flyway"
+          git clone "\$FLYWAY_URL" "\$APP_DIR/external/flyway"
+          git -C "\$APP_DIR/external/flyway" checkout "\$FLYWAY_SHA"
 
           MIGRATE_LOG="\$APP_DIR/logs/\${SCREEN_SESSION}-migrate.log"
           docker run --rm --network host \
