@@ -1,12 +1,13 @@
-package command
+package commands
 
 import (
+	"strings"
+
 	"github.com/df-mc/dragonfly/server/cmd"
 	"github.com/df-mc/dragonfly/server/player"
 	"github.com/df-mc/dragonfly/server/world"
-	"github.com/moyai-network/build/moyai/user"
-	"github.com/moyai-network/build/moyai/worlds"
-	"strings"
+	"github.com/moyai-network/build/internal/handlers/user"
+	"github.com/moyai-network/build/internal/worlds"
 )
 
 // Set is a command used to set a specific block in the area associated with the player.
@@ -15,7 +16,7 @@ type Set struct {
 }
 
 // Run ...
-func (se Set) Run(s cmd.Source, o *cmd.Output) {
+func (se Set) Run(s cmd.Source, o *cmd.Output, _ *world.Tx) {
 	p := s.(*player.Player)
 
 	h, ok := p.Handler().(*user.Handler)
@@ -34,7 +35,7 @@ func (se Set) Run(s cmd.Source, o *cmd.Output) {
 // Allow ...
 func (Set) Allow(s cmd.Source) bool {
 	p, ok := s.(*player.Player)
-	return ok && p.World() != worlds.Manager().DefaultWorld()
+	return ok && !worlds.InDefaultWorld(p)
 }
 
 type (

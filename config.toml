@@ -1,5 +1,5 @@
 [Network]
-Address = ':19133'
+Address = '0.0.0.0:19169'
 
 [Server]
 Name = ''
@@ -23,5 +23,10 @@ AutoBuildPack = false
 Folder = 'assets/resources'
 Required = false
 
-[Moyai]
-Whitelist = ['RestartFU', 'Sesri', 'sheely4']
+[Database]
+Host = '127.0.0.1'
+Port = 5432
+Name = 'moyai'
+User = 'postgres'
+Password = ''
+MaxConns = 10

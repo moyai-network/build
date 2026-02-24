@@ -1,11 +1,12 @@
-package command
+package commands
 
 import (
 	"github.com/df-mc/dragonfly/server/block"
 	"github.com/df-mc/dragonfly/server/block/cube"
 	"github.com/df-mc/dragonfly/server/cmd"
 	"github.com/df-mc/dragonfly/server/player"
-	"github.com/moyai-network/build/moyai/worlds"
+	"github.com/df-mc/dragonfly/server/world"
+	"github.com/moyai-network/build/internal/worlds"
 	"github.com/sandertv/gophertunnel/minecraft/text"
 )
 
@@ -28,7 +29,7 @@ type WorldTeleport struct {
 }
 
 // Run ...
-func (w WorldCreate) Run(s cmd.Source, o *cmd.Output) {
+func (w WorldCreate) Run(s cmd.Source, o *cmd.Output, _ *world.Tx) {
 	p := s.(*player.Player)
 
 	if _, ok := worlds.Manager().World(w.Name); ok {
@@ -41,15 +42,19 @@ func (w WorldCreate) Run(s cmd.Source, o *cmd.Output) {
 		o.Error(err)
 		return
 	}
-	wr.SetBlock(wr.Spawn().Sub(cube.Pos{0, 1, 0}), block.Grass{}, nil)
-	wr.AddEntity(p)
-	p.Teleport(wr.Spawn().Vec3Middle())
+	<-wr.Exec(func(tx *world.Tx) {
+		tx.SetBlock(tx.World().Spawn().Sub(cube.Pos{0, 1, 0}), block.Grass{}, nil)
+	})
+	if !worlds.MovePlayer(p, wr) {
+		o.Error("failed to move player to the new world")
+		return
+	}
 
 	o.Print(text.Colourf("<green>Successfully created world %s.</green>", w.Name))
 }
 
 // Run ...
-func (w WorldDelete) Run(s cmd.Source, o *cmd.Output) {
+func (w WorldDelete) Run(s cmd.Source, o *cmd.Output, _ *world.Tx) {
 	err := worlds.Manager().DeleteWorld(string(w.Name))
 	if err != nil {
 		o.Error(err)
@@ -59,7 +64,7 @@ func (w WorldDelete) Run(s cmd.Source, o *cmd.Output) {
 }
 
 // Run ...
-func (w WorldTeleport) Run(s cmd.Source, o *cmd.Output) {
+func (w WorldTeleport) Run(s cmd.Source, o *cmd.Output, _ *world.Tx) {
 	p := s.(*player.Player)
 
 	wr, ok := worlds.Manager().World(string(w.Name))
@@ -67,8 +72,10 @@ func (w WorldTeleport) Run(s cmd.Source, o *cmd.Output) {
 		o.Errorf("No world with the name %s was found", w.Name)
 		return
 	}
-	wr.AddEntity(p)
-	p.Teleport(wr.Spawn().Vec3Middle())
+	if !worlds.MovePlayer(p, wr) {
+		o.Error("failed to teleport player to the selected world")
+		return
+	}
 
 	o.Print(text.Colourf("<green>You have been teleported to the world %s.</green>", w.Name))
 }

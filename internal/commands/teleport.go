@@ -1,10 +1,13 @@
-package command
+package commands
 
 import (
 	"fmt"
+
 	"github.com/df-mc/dragonfly/server/cmd"
 	"github.com/df-mc/dragonfly/server/player"
+	"github.com/df-mc/dragonfly/server/world"
 	"github.com/go-gl/mathgl/mgl64"
+	"github.com/moyai-network/build/internal/worlds"
 )
 
 // TeleportToPos is a command that teleports the user to a position.
@@ -30,13 +33,13 @@ type TeleportTargetsToPos struct {
 }
 
 // Run ...
-func (t TeleportToPos) Run(s cmd.Source, o *cmd.Output) {
+func (t TeleportToPos) Run(s cmd.Source, o *cmd.Output, _ *world.Tx) {
 	p := s.(*player.Player)
 	p.Teleport(t.Position)
 }
 
 // Run ...
-func (tp TeleportToTarget) Run(s cmd.Source, o *cmd.Output) {
+func (tp TeleportToTarget) Run(s cmd.Source, o *cmd.Output, _ *world.Tx) {
 	p, ok := s.(*player.Player)
 	if !ok {
 		return
@@ -45,26 +48,55 @@ func (tp TeleportToTarget) Run(s cmd.Source, o *cmd.Output) {
 	if !ok {
 		return
 	}
-	if p.World() != t.World() {
-		p.World().AddEntity(t)
+
+	dstWorld := worlds.PlayerWorld(t)
+	if dstWorld == nil {
+		return
 	}
-	p.Teleport(t.Position())
+	_ = movePlayerTo(p, dstWorld, t.Position())
 }
 
 // teleportTargets teleports a list of targets to a specified position and world. If the world is nil, it will only
 // teleport to the position. If the position is empty, it will only teleport to the world of the player. It returns the
 // players affected in a readable string.
 func teleportTargets(targets []cmd.Target, destination mgl64.Vec3, t *player.Player) string {
+	dst := worlds.PlayerWorld(t)
+	if dst == nil {
+		return ""
+	}
+
 	for _, target := range targets {
 		if p, ok := target.(*player.Player); ok {
-			if p.World() != t.World() {
-				t.World().AddEntity(p)
-			}
-			p.Teleport(destination)
+			_ = movePlayerTo(p, dst, destination)
 		}
 	}
 	if l := len(targets); l > 1 {
 		return fmt.Sprintf("%d players", l)
 	}
 	return targets[0].(cmd.NamedTarget).Name()
+}
+
+func movePlayerTo(p *player.Player, dst *world.World, pos mgl64.Vec3) bool {
+	if p == nil || p.Tx() == nil || dst == nil {
+		return false
+	}
+	if p.Tx().World() == dst {
+		p.Teleport(pos)
+		return true
+	}
+
+	handle := p.Tx().RemoveEntity(p)
+	if handle == nil {
+		handle = p.H()
+	}
+
+	<-dst.Exec(func(tx *world.Tx) {
+		e := tx.AddEntity(handle)
+		moved, ok := e.(*player.Player)
+		if !ok {
+			return
+		}
+		moved.Teleport(pos)
+	})
+	return true
 }

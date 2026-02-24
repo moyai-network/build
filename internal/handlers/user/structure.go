@@ -5,10 +5,13 @@ import (
 	"github.com/df-mc/dragonfly/server/world"
 )
 
-// buildStructure is basically the same as world.(*World).BuildStructure.
+// buildStructure is basically the same as world.(*Tx).BuildStructure.
 // The only difference is that here, we have a way of logging all the blocks that are being placed.
-func buildStructure(w *world.World, pos cube.Pos, s world.Structure) map[world.Block][]cube.Pos {
+func buildStructure(tx *world.Tx, pos cube.Pos, s world.Structure) map[world.Block][]cube.Pos {
 	undo := map[world.Block][]cube.Pos{}
+	if tx == nil {
+		return undo
+	}
 
 	dim := s.Dimensions()
 	width, height, length := dim[0], dim[1], dim[2]
@@ -24,10 +27,10 @@ func buildStructure(w *world.World, pos cube.Pos, s world.Structure) map[world.B
 
 				for localY := 0; localY < 16; localY++ {
 					yOffset := baseY + localY
-					if yOffset > w.Range()[1] || yOffset >= maxY {
+					if yOffset > tx.Range()[1] || yOffset >= maxY {
 						// We've hit the height limit for blocks.
 						break
-					} else if yOffset < w.Range()[0] || yOffset < pos[1] {
+					} else if yOffset < tx.Range()[0] || yOffset < pos[1] {
 						// We've got a block below the minimum, but other blocks might still reach above
 						// it, so don't break but continue.
 						continue
@@ -45,10 +48,10 @@ func buildStructure(w *world.World, pos cube.Pos, s world.Structure) map[world.B
 							b, _ := s.At(xOffset-pos[0], yOffset-pos[1], zOffset-pos[2], nil)
 							if b != nil {
 								ps := cube.Pos{xOffset, yOffset, zOffset}
-								bl := w.Block(ps)
+								bl := tx.Block(ps)
 								undo[bl] = append(undo[bl], ps)
 
-								w.SetBlock(ps, b, nil)
+								tx.SetBlock(ps, b, nil)
 							}
 						}
 					}

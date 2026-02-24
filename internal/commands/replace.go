@@ -1,10 +1,10 @@
-package command
+package commands
 
 import (
 	"github.com/df-mc/dragonfly/server/cmd"
 	"github.com/df-mc/dragonfly/server/player"
 	"github.com/df-mc/dragonfly/server/world"
-	"github.com/moyai-network/build/moyai/user"
+	"github.com/moyai-network/build/internal/handlers/user"
 )
 
 type Replace struct {
@@ -12,7 +12,7 @@ type Replace struct {
 	New blockList `cmd:"new"`
 }
 
-func (r Replace) Run(s cmd.Source, o *cmd.Output) {
+func (r Replace) Run(s cmd.Source, o *cmd.Output, _ *world.Tx) {
 	p := s.(*player.Player)
 
 	h, ok := p.Handler().(*user.Handler)

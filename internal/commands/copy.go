@@ -1,12 +1,14 @@
-package command
+package commands
 
 import (
+	"os"
+
 	"github.com/df-mc/dragonfly/server/cmd"
 	"github.com/df-mc/dragonfly/server/player"
+	"github.com/df-mc/dragonfly/server/world"
 	"github.com/df-mc/structure"
-	"github.com/moyai-network/build/moyai/user"
-	"github.com/moyai-network/build/moyai/worlds"
-	"os"
+	"github.com/moyai-network/build/internal/handlers/user"
+	"github.com/moyai-network/build/internal/worlds"
 )
 
 // Copy copies the blocks within the player's selected area.
@@ -25,7 +27,7 @@ type CopyDelete struct {
 }
 
 // Run ...
-func (Copy) Run(s cmd.Source, o *cmd.Output) {
+func (Copy) Run(s cmd.Source, o *cmd.Output, _ *world.Tx) {
 	p := s.(*player.Player)
 
 	h, ok := p.Handler().(*user.Handler)
@@ -37,7 +39,7 @@ func (Copy) Run(s cmd.Source, o *cmd.Output) {
 }
 
 // Run ...
-func (c CopySave) Run(s cmd.Source, o *cmd.Output) {
+func (c CopySave) Run(s cmd.Source, o *cmd.Output, _ *world.Tx) {
 	p := s.(*player.Player)
 
 	h, ok := p.Handler().(*user.Handler)
@@ -64,24 +66,24 @@ func (c CopySave) Run(s cmd.Source, o *cmd.Output) {
 }
 
 // Run ...
-func (c CopyDelete) Run(s cmd.Source, o *cmd.Output) {
+func (c CopyDelete) Run(s cmd.Source, o *cmd.Output, _ *world.Tx) {
 	_ = os.Remove("assets/structures/" + string(c.Name))
 }
 
 // Allow ...
 func (Copy) Allow(s cmd.Source) bool {
 	p, ok := s.(*player.Player)
-	return ok && p.World() != worlds.Manager().DefaultWorld()
+	return ok && !worlds.InDefaultWorld(p)
 }
 
 // Allow ...
 func (CopySave) Allow(s cmd.Source) bool {
 	p, ok := s.(*player.Player)
-	return ok && p.World() != worlds.Manager().DefaultWorld()
+	return ok && !worlds.InDefaultWorld(p)
 }
 
 // Allow ...
 func (CopyDelete) Allow(s cmd.Source) bool {
 	p, ok := s.(*player.Player)
-	return ok && p.World() != worlds.Manager().DefaultWorld()
+	return ok && !worlds.InDefaultWorld(p)
 }

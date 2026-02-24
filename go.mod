@@ -1,47 +1,47 @@
 module github.com/moyai-network/build
 
-go 1.21.4
+go 1.25.7
 
 require (
-	github.com/df-mc/dragonfly v0.9.16-0.20240429014602-97fdfe269e3c
+	github.com/df-mc/dragonfly v0.10.11-0.20260211105526-1ec432bade04
 	github.com/df-mc/structure v1.1.0
-	github.com/df-mc/we v0.0.0-20221120123556-6250647631b5
-	github.com/go-gl/mathgl v1.1.0
+	github.com/go-gl/mathgl v1.2.0
+	github.com/google/uuid v1.6.0
+	github.com/jackc/pgx/v5 v5.8.0
+	github.com/moyai-network/flyway v0.0.1
 	github.com/restartfu/gophig v0.0.0-20230501130741-bd994da592f7
-	github.com/sandertv/gophertunnel v1.37.0
-	github.com/sirupsen/logrus v1.9.3
-	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
+	github.com/sandertv/gophertunnel v1.54.0
+	golang.org/x/exp v0.0.0-20250103183323-7d7fa50e5329
 )
 
 require (
-	github.com/bedrock-gophers/inv v0.1.1-0.20240531151452-b6e604164115 // indirect
 	github.com/brentp/intintmap v0.0.0-20190211203843-30dc0ade9af9 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/df-mc/atomic v1.10.0 // indirect
+	github.com/coreos/go-oidc/v3 v3.17.0 // indirect
+	github.com/df-mc/go-playfab v1.0.0 // indirect
+	github.com/df-mc/go-xsapi v1.0.1 // indirect
 	github.com/df-mc/goleveldb v1.1.9 // indirect
-	github.com/df-mc/worldupgrader v1.0.14 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
+	github.com/df-mc/jsonc v1.0.5 // indirect
+	github.com/df-mc/worldupgrader v1.0.20 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.6.0 // indirect
-	github.com/klauspost/compress v1.17.8 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
+	github.com/klauspost/compress v1.18.4 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
-	github.com/muhammadmuzzammil1998/jsonc v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
-	github.com/sandertv/go-raknet v1.13.0 // indirect
+	github.com/samber/lo v1.52.0 // indirect
+	github.com/sandertv/go-raknet v1.15.1-0.20260112202637-beca0b10c217 // indirect
 	github.com/segmentio/fasthash v1.0.3 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/crypto v0.22.0 // indirect
-	golang.org/x/image v0.15.0 // indirect
-	golang.org/x/net v0.24.0 // indirect
-	golang.org/x/oauth2 v0.19.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	golang.org/x/mod v0.27.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/oauth2 v0.28.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/df-mc/dragonfly => github.com/Shock-Network/dragonfly v0.0.0-20240428001629-0fe4b5ea69c4
+replace github.com/moyai-network/flyway => ./external/flyway

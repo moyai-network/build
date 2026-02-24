@@ -1,20 +1,22 @@
-package command
+package commands
 
 import (
+	"strconv"
+
 	"github.com/df-mc/dragonfly/server/block/cube"
 	"github.com/df-mc/dragonfly/server/cmd"
 	"github.com/df-mc/dragonfly/server/player"
-	"github.com/moyai-network/build/moyai/user"
-	"github.com/moyai-network/build/moyai/worlds"
+	"github.com/df-mc/dragonfly/server/world"
+	"github.com/moyai-network/build/internal/handlers/user"
+	"github.com/moyai-network/build/internal/worlds"
 	"github.com/sandertv/gophertunnel/minecraft/text"
-	"strconv"
 )
 
 type Pos struct {
 	Pos pos `cmd:"selection"`
 }
 
-func (po Pos) Run(s cmd.Source, o *cmd.Output) {
+func (po Pos) Run(s cmd.Source, o *cmd.Output, _ *world.Tx) {
 	p := s.(*player.Player)
 	pos := cube.PosFromVec3(p.Position())
 
@@ -28,7 +30,7 @@ func (po Pos) Run(s cmd.Source, o *cmd.Output) {
 // Allow ...
 func (Pos) Allow(s cmd.Source) bool {
 	p, ok := s.(*player.Player)
-	return ok && p.World() != worlds.Manager().DefaultWorld()
+	return ok && !worlds.InDefaultWorld(p)
 }
 
 type pos string

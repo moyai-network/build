@@ -1,0 +1,233 @@
+name: Deploy Server
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment environment
+        type: choice
+        required: true
+        default: dev
+        options:
+          - dev
+          - prod
+
+concurrency:
+  group: deploy-server
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'push' && 'dev' || inputs.environment }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Validate deployment files
+        run: |
+          set -euo pipefail
+          test -f Makefile
+          test -f go.mod
+          test -d cmd
+          test -d external/flyway
+
+      - name: Configure SSH
+        env:
+          DUBAI_KNOWN_HOSTS: ${{ secrets.DUBAI_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          : > ~/.ssh/known_hosts
+          if [ -n "${DUBAI_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$DUBAI_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          fi
+          if ! ssh-keygen -F "[restartfu.com]:23" -f ~/.ssh/known_hosts >/dev/null; then
+            ssh-keyscan -p 23 restartfu.com >> ~/.ssh/known_hosts
+          fi
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Install sshpass
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      - name: Upload project to remote temp dir
+        env:
+          SSHPASS: ${{ secrets.DUBAI_SSH_PASSWORD }}
+          REMOTE_DIR: /tmp/moyai-deploy-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          sshpass -e ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -p 23 dubai@restartfu.com \
+            "rm -rf '$REMOTE_DIR' && mkdir -p '$REMOTE_DIR'"
+          tar -czf - --exclude-vcs --exclude='.agents' . | sshpass -e ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -p 23 dubai@restartfu.com \
+            "tar -xzf - -C '$REMOTE_DIR'"
+
+      - name: Deploy and restart screen session
+        env:
+          SSHPASS: ${{ secrets.DUBAI_SSH_PASSWORD }}
+          REMOTE_DIR: /tmp/moyai-deploy-${{ github.run_id }}-${{ github.run_attempt }}
+          APP_DIR_VAR: ${{ vars.MOYAI_APP_DIR }}
+          APP_DIR_SECRET: ${{ secrets.MOYAI_APP_DIR }}
+          SCREEN_SESSION: ${{ vars.MOYAI_SCREEN_SESSION }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DB_MAX_CONNS: ${{ secrets.DB_MAX_CONNS }}
+        run: |
+          set -euo pipefail
+
+          APP_DIR="${APP_DIR_VAR:-}"
+          if [ -z "${APP_DIR:-}" ]; then
+            APP_DIR="${APP_DIR_SECRET:-}"
+          fi
+          if [ -z "${APP_DIR:-}" ]; then
+            APP_DIR="/home/dubai/moyai_dev/build"
+          fi
+
+          for required_var in DB_HOST DB_NAME DB_USER DB_PASS; do
+            if [ -z "${!required_var:-}" ]; then
+              echo "Secret $required_var is required"
+              exit 1
+            fi
+          done
+
+          SCREEN_SESSION="${SCREEN_SESSION:-moyai_build}"
+          DB_PORT="${DB_PORT:-5432}"
+          DB_MAX_CONNS="${DB_MAX_CONNS:-10}"
+
+          decode_percent_encoding() {
+            local in="$1"
+            local out=""
+            local i=0
+            local len="${#in}"
+            local ch hex
+
+            while [ "$i" -lt "$len" ]; do
+              ch="${in:$i:1}"
+              if [ "$ch" = "%" ] && [ $((i + 2)) -lt "$len" ]; then
+                hex="${in:$((i + 1)):2}"
+                if [[ "$hex" =~ ^[0-9A-Fa-f]{2}$ ]]; then
+                  printf -v ch '%b' "\\x$hex"
+                  out+="$ch"
+                  i=$((i + 3))
+                  continue
+                fi
+              fi
+              out+="$ch"
+              i=$((i + 1))
+            done
+
+            printf '%s' "$out"
+          }
+
+          DB_PASS="$(decode_percent_encoding "${DB_PASS:-}")"
+
+          APP_DIR_Q="$(printf '%q' "$APP_DIR")"
+          SCREEN_SESSION_Q="$(printf '%q' "$SCREEN_SESSION")"
+          DB_HOST_Q="$(printf '%q' "$DB_HOST")"
+          DB_PORT_Q="$(printf '%q' "$DB_PORT")"
+          DB_NAME_Q="$(printf '%q' "$DB_NAME")"
+          DB_USER_Q="$(printf '%q' "$DB_USER")"
+          DB_PASS_Q="$(printf '%q' "$DB_PASS")"
+          DB_MAX_CONNS_Q="$(printf '%q' "$DB_MAX_CONNS")"
+
+          sshpass -e ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -p 23 dubai@restartfu.com \
+            bash -s -- "$REMOTE_DIR" <<REMOTE
+          set -euo pipefail
+          REMOTE_DIR="\$1"
+          APP_DIR=$APP_DIR_Q
+          SCREEN_SESSION=$SCREEN_SESSION_Q
+          DB_HOST=$DB_HOST_Q
+          DB_PORT=$DB_PORT_Q
+          DB_NAME=$DB_NAME_Q
+          DB_USER=$DB_USER_Q
+          DB_PASS=$DB_PASS_Q
+          DB_MAX_CONNS=$DB_MAX_CONNS_Q
+
+          if ! command -v screen >/dev/null 2>&1; then
+            echo "screen is required on remote host"
+            exit 1
+          fi
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "docker is required on remote host for flyway migrate"
+            exit 1
+          fi
+
+          mkdir -p "\$APP_DIR/logs"
+          find "\$APP_DIR" -mindepth 1 -maxdepth 1 ! -name data ! -name logs -exec rm -rf {} +
+          tar -C "\$REMOTE_DIR" -cf - . | tar -C "\$APP_DIR" -xf -
+
+          MIGRATE_LOG="\$APP_DIR/logs/\${SCREEN_SESSION}-migrate.log"
+          docker run --rm --network host \
+            -v "\$APP_DIR/external/flyway:/work" -w /work \
+            -e FLYWAY_URL="jdbc:postgresql://\$DB_HOST:\$DB_PORT/\$DB_NAME" \
+            -e FLYWAY_USER="\$DB_USER" \
+            -e FLYWAY_PASSWORD="\$DB_PASS" \
+            flyway/flyway:latest \
+            -configFiles=flyway.conf migrate >> "\$MIGRATE_LOG" 2>&1
+
+          session_running() {
+            screen -wipe >/dev/null 2>&1 || true
+            screen -list | grep -F ".\${SCREEN_SESSION}" | grep -Eq "\\((Attached|Detached)\\)"
+          }
+
+          if session_running; then
+            screen -S "\$SCREEN_SESSION" -p 0 -X stuff "\$(printf '\003')" || true
+            for _ in \$(seq 1 20); do
+              if ! session_running; then
+                break
+              fi
+              sleep 1
+            done
+            if session_running; then
+              screen -S "\$SCREEN_SESSION" -X quit || true
+              sleep 1
+            fi
+          fi
+
+          APP_DIR_ESCAPED="\$(printf '%q' "\$APP_DIR")"
+          LOG_FILE="\$APP_DIR/logs/\${SCREEN_SESSION}.log"
+
+          screen -Logfile "\$LOG_FILE" -L -dmS "\$SCREEN_SESSION" \
+            env DB_HOST="\$DB_HOST" DB_PORT="\$DB_PORT" DB_NAME="\$DB_NAME" DB_USER="\$DB_USER" DB_PASS="\$DB_PASS" DB_MAX_CONNS="\$DB_MAX_CONNS" \
+            bash -lc "cd \$APP_DIR_ESCAPED && trap 'exit 0' INT TERM && while true; do go run ./cmd; rc=\\\$?; if [ \\\$rc -eq 130 ] || [ \\\$rc -eq 143 ]; then exit 0; fi; printf '[%s] server exited (code %s), restarting in 2s\n' \"\\\$(date -u '+%Y-%m-%dT%H:%M:%SZ')\" \"\\\$rc\"; sleep 2; done"
+
+          sleep 2
+          if ! session_running; then
+            echo "failed to start screen session \$SCREEN_SESSION"
+            echo "--- screen -list ---"
+            screen -list || true
+            echo "--- end screen -list ---"
+            if [ -f "\$LOG_FILE" ]; then
+              echo "--- tail \$LOG_FILE ---"
+              tail -n 200 "\$LOG_FILE" || true
+              echo "--- end log tail ---"
+            fi
+            exit 1
+          fi
+
+          echo "screen session \$SCREEN_SESSION started"
+          REMOTE
+
+      - name: Cleanup remote temp dir
+        if: always()
+        env:
+          SSHPASS: ${{ secrets.DUBAI_SSH_PASSWORD }}
+          REMOTE_DIR: /tmp/moyai-deploy-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          if ! sshpass -e ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -p 23 dubai@restartfu.com \
+            "rm -rf '$REMOTE_DIR'"; then
+            echo "warning: remote cleanup failed"
+          fi
