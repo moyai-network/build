@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -30,6 +31,10 @@ type manager struct {
 }
 
 func NewManager(w *world.World, path string, log *slog.Logger) error {
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		return fmt.Errorf("error creating world directory %s: %s", path, err)
+	}
+
 	dir, err := os.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("error loading world directory %s: %s", path, err)
@@ -80,7 +85,7 @@ func (m *manager) Worlds() []*world.World {
 func (m *manager) CreateWorld(name string) (*world.World, error) {
 	name = strings.ToLower(name)
 
-	prov, err := mcdb.Open(m.path + "/" + name)
+	prov, err := mcdb.Open(filepath.Join(m.path, name))
 	if err != nil {
 		return nil, fmt.Errorf("error loading world %s: %s", name, err)
 	}
@@ -200,7 +205,7 @@ func (m *manager) DeleteWorld(name string) error {
 		_ = w.Close()
 	}
 
-	err := os.RemoveAll(m.path + "/" + name)
+	err := os.RemoveAll(filepath.Join(m.path, name))
 	if err != nil {
 		return fmt.Errorf("error deleting world %s: %s", name, err)
 	}

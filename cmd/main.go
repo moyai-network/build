@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"github.com/df-mc/dragonfly/server/player"
@@ -59,7 +60,8 @@ func main() {
 	w.StopThundering()
 	w.StopRaining()
 
-	err = worlds.NewManager(w, "assets/worlds", log)
+	worldsPath := filepath.Join(".moyai", "dev", "build", "worlds")
+	err = worlds.NewManager(w, worldsPath, log)
 	if err != nil {
 		panic(err)
 	}
